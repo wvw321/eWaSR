@@ -11,16 +11,16 @@ from .decoders import *
 from .utils import IntermediateLayerGetter
 
 model_list = [
-    'wasr_resnet101', 'wasr_resnet101_imu', 'wasr_resnet50', 'wasr_resnet50_imu', 'deeplab', 
+    'wasr_resnet101', 'wasr_resnet101_imu', 'wasr_resnet50', 'wasr_resnet50_imu', 'deeplab',
     'wasr_resnet18_imu', 'ewasr_resnet18', 'ewasr_resnet18_imu'
 ]
-    
+
 model_urls = {
     'deeplabv3_resnet101_coco': 'https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth'
 }
 
-def get_model(model_name, num_classes=3, pretrained=True, **kwargs):
 
+def get_model(model_name, num_classes=3, pretrained=True, **kwargs):
     imu = model_name.endswith('_imu')
     if model_name.startswith('wasr_resnet101'):
         model = wasr_deeplabv2_resnet101(num_classes=num_classes, pretrained=pretrained, imu=imu, **kwargs)
@@ -32,11 +32,12 @@ def get_model(model_name, num_classes=3, pretrained=True, **kwargs):
         model = wasr_deeplabv2_resnet18(num_classes=num_classes, imu=imu)
     elif model_name.startswith('ewasr'):
         backbone = model_name.split("_")[1].split("_")[0]
-        model = ewasr(num_classes = num_classes, imu = imu, backbone=backbone, **kwargs)
+        model = ewasr(num_classes=num_classes, imu=imu, backbone=backbone, **kwargs)
     else:
         raise ValueError('Unknown model: %s' % model_name)
 
     return model
+
 
 class WaSR(nn.Module):
     """
@@ -54,6 +55,7 @@ class WaSR(nn.Module):
             and returns a dense segmentation prediction for the classes
         classifier_input_features (int, optional): number of input features required by classifier
     """
+
     def __init__(self, backbone, decoder, imu=False):
         super(WaSR, self).__init__()
 
@@ -65,11 +67,15 @@ class WaSR(nn.Module):
     def forward(self, x):
 
         features = self.backbone(x['image'])
-
-        features['imu_mask'] = x['imu_mask'].float().unsqueeze(1)
-        features = (features['out'], features['aux'], features['skip2'], features['skip1'], features['imu_mask'])
-        aux = features[1]
-        x = self.decoder(*features)
+        if self.imu is not False:
+            features['imu_mask'] = x['imu_mask'].float().unsqueeze(1)
+            features = (features['out'], features['aux'], features['skip2'], features['skip1'], features['imu_mask'])
+            aux = features[1]
+            x = self.decoder(*features)
+        else:
+            features = (features['out'], features['aux'], features['skip2'], features['skip1'],)
+            aux = features[1]
+            x = self.decoder(imu_mask=False, *features)
 
         # Return segmentation map and aux feature map
         output = OrderedDict([
@@ -113,7 +119,6 @@ def wasr_deeplabv2_resnet101(num_classes=3, pretrained=False, imu=False, **kwarg
 
 
 def wasr_deeplabv2_resnet50(num_classes=3, imu=False):
-
     # Pretrained ResNet101 backbone
     backbone = resnet50(pretrained=True, replace_stride_with_dilation=[False, True, True])
     return_layers = {
@@ -164,8 +169,8 @@ def deeplabv3_resnet101(num_classes=3, pretrained=True):
     decoder = model.classifier
 
     return_layers = {
-            'layer4': 'out',
-            'layer3': 'aux'
+        'layer4': 'out',
+        'layer3': 'aux'
     }
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
@@ -196,7 +201,6 @@ def wasr_deeplabv2_resnet18(num_classes=3, imu=True):
 
 
 def ewasr(num_classes, imu, backbone, **kwargs):
-
     if backbone == "resnet18":
         bb = resnet18(pretrained=True)
         return_layers = {
@@ -212,9 +216,9 @@ def ewasr(num_classes, imu, backbone, **kwargs):
 
     decoder = EWaSRDecoder(
         num_classes=3,
-        ch= ch, #512 if kwargs.get("ch") is None else kwargs["ch"], 
-        L=6 if kwargs.get("L") is None else kwargs["L"], 
-        imu = imu,
+        ch=ch,  # 512 if kwargs.get("ch") is None else kwargs["ch"],
+        L=6 if kwargs.get("L") is None else kwargs["L"],
+        imu=imu,
         mixer="CCCCSS" if kwargs.get("mixer") is None else kwargs["mixer"],
         ch_sim=256 if kwargs.get("ch_sim") is None else kwargs["ch_sim"],
         enricher="SS" if kwargs.get("enricher") is None else kwargs["enricher"],

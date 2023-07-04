@@ -23,7 +23,7 @@ SEGMENTATION_COLORS = np.array([
 ], np.uint8)
 
 BATCH_SIZE = 4
-MODEL = 'wasr_resnet18_imu'
+MODEL = 'ewasr_resnet18'
 
 
 def get_arguments():
@@ -65,7 +65,7 @@ def predict(args):
     dl = DataLoader(dataset, batch_size=args.batch_size, num_workers=1)
 
     # Prepare model
-    model = models.get_model(args.architecture, num_classes=args.num_classes, pretrained=False, mixer=args.mixer, enricher=args.enricher, project=args.project)
+    model = models.get_model(args.model, num_classes=args.num_classes, pretrained=False, mixer=args.mixer, enricher=args.enricher, project=args.project)
     state_dict = load_weights(args.weights)
     model.load_state_dict(state_dict)
     predictor = Predictor(model, args.fp16)

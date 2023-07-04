@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torchvision.transforms import InterpolationMode
 import torchvision.transforms.functional as TF
-from timm.models.layers.helpers import to_2tuple
+# from timm.models.layers.helpers import to_2tuple
 from wasr.layers import AttentionRefinementModule
 
 

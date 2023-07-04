@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torchvision.transforms import InterpolationMode
 import torchvision.transforms.functional as TF
-import timm
+# import timm
 from .layers import AttentionRefinementModule, FeatureFusionModule, ASPPv2, Spade, C3Blk, ResBlk, SPP, Conv, SpatialAttentionRefinementModule, PyramidPoolAgg, SIM, SegHead
 from .metaformer import *
 
